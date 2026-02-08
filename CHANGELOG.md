@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.2] - 2025-02-09
+
+### Added
+- Android 音频权限声明 (RECORD_AUDIO, MODIFY_AUDIO_SETTINGS)
+- 自定义节拍器图标
+- GitHub Actions 自动部署 Web 版本到 GitHub Pages
+- 音频资源来源说明 (MusyngKite SoundFont)
+
+### Changed
+- 更新应用名称为"节拍器调音器"
+- 优化 GitHub Actions 工作流，支持并行构建 Android 和 Web
+- 调音器 UI 优化：
+  - 移除模拟随机变化，改为静态等待状态
+  - 添加"功能开发中"提示
+  - 优化无信号时的显示状态
+
+### Fixed
+- 修复 AudioService 未初始化导致无声音的问题
+- 修复调音器在无声音输入时随机变化的问题
+
 ## [0.0.1] - 2025-02-09
 
 ### Added
@@ -35,4 +55,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Flutter 3.27.0
 - Riverpod 状态管理
 - Hive 本地存储
+- flutter_soloud 低延迟音频引擎
 - flutter_animate 动画库

@@ -7,9 +7,11 @@ import '../../../core/services/audio_service.dart';
 import '../../../core/services/settings_service.dart';
 import 'metronome_engine.dart';
 
-/// 音频服务 Provider
+/// 音频服务 Provider - 自动初始化
 final audioServiceProvider = Provider<AudioService>((ref) {
   final service = AudioService();
+  // 异步初始化，不阻塞 UI
+  service.initialize();
   ref.onDispose(() => service.dispose());
   return service;
 });

@@ -1,19 +1,41 @@
+/// 音色类型
+enum SoundType {
+  synthesis,  // 合成音（电子音）
+  sample,     // 采样音（音频文件）
+}
+
 /// 音色包枚举
 enum SoundPack {
-  digital('Digital', '数字音'),
-  analog('Analog', '机械音'),
-  drumKit('Drum Kit', '鼓组'),
-  woodblock('Woodblock', '木块'),
-  piano('Piano', '钢琴'),
-  guitar('Guitar', '吉他'),
-  bass('Bass', '贝斯'),
-  hihat('Hi-Hat', '踩镲'),
-  cowbell('Cowbell', '牛铃');
+  // 合成音色
+  digital('digital', '数字音', SoundType.synthesis),
+  analog('analog', '机械音', SoundType.synthesis),
+  woodblock('woodblock', '木块', SoundType.synthesis),
+  hihat('hihat', '踩镲', SoundType.synthesis),
+  cowbell('cowbell', '牛铃', SoundType.synthesis),
 
-  final String name;
-  final String label;
+  // 采样音色 (音频文件)
+  drumKit('drumkit', '鼓组', SoundType.sample),
+  piano('piano', '钢琴', SoundType.sample),
+  guitar('guitar', '吉他', SoundType.sample),
+  bass('bass', '贝斯', SoundType.sample),
+  musicBox('musicbox', '音乐盒', SoundType.sample),
+  violin('violin', '小提琴', SoundType.sample),
+  trumpet('trumpet', '小号', SoundType.sample);
 
-  const SoundPack(this.name, this.label);
+  final String folderName;  // 文件夹名称
+  final String label;       // 显示名称
+  final SoundType type;
+
+  const SoundPack(this.folderName, this.label, this.type);
+
+  /// 是否是合成音色
+  bool get isSynthesis => type == SoundType.synthesis;
+
+  /// 是否是采样音色
+  bool get isSample => type == SoundType.sample;
+
+  /// 获取音频文件路径 (采样音色用)
+  String getAssetPath(String beatType) => 'assets/audio/$folderName/$beatType.mp3';
 }
 
 /// 音色包对应的频率配置

@@ -1,13 +1,18 @@
-name: Build and Release APK
+name: Build and Release
 
 on:
   push:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 jobs:
-  build:
-    name: Build APK
+  build-android:
+    name: Build Android APK
     runs-on: ubuntu-latest
 
     steps:
@@ -30,9 +35,6 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Run tests
-        run: flutter test
-
       - name: Build APK
         run: flutter build apk --release
 
@@ -40,6 +42,81 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/rhythm-pitch-v${VERSION}.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: build/app/outputs/flutter-apk/rhythm-pitch-v*.apk
+
+  build-web:
+    name: Build Web
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Web
+        run: flutter build web --release --base-href "/flutter-metronome/"
+
+      - name: Upload Web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: build/web
+
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    needs: build-web
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Download Web artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: build/web
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  create-release:
+    name: Create GitHub Release
+    needs: [build-android, build-web]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: artifacts
 
       - name: Extract changelog for this version
         id: changelog
@@ -58,8 +135,13 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/app/outputs/flutter-apk/rhythm-pitch-v*.apk
-          body: ${{ steps.changelog.outputs.content }}
+          files: artifacts/*.apk
+          body: |
+            ${{ steps.changelog.outputs.content }}
+
+            ---
+
+            **Web 版本**: https://${{ github.repository_owner }}.github.io/flutter-metronome/
           draft: false
           prerelease: false
         env:

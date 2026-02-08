@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.0.1+1
+version: 0.0.2+2
 
 environment:
   sdk: ^3.10.8
@@ -35,8 +35,8 @@ dependencies:
   # State Management
   flutter_riverpod: ^2.6.1
 
-  # Audio (Web compatible, will switch to flutter_soloud for mobile later)
-  audioplayers: ^6.1.0
+  # Audio - flutter_soloud for low-latency synthesis
+  flutter_soloud: ^3.1.6
 
   # Storage
   hive: ^2.2.3
@@ -55,6 +55,16 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   hive_generator: ^2.0.1
   build_runner: ^2.4.13
+  flutter_launcher_icons: ^0.14.3
+
+# App icon configuration
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+  adaptive_icon_background: "#1E1E1E"
+  adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
+  remove_alpha_ios: true
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -69,6 +79,14 @@ flutter:
 
   assets:
     - assets/audio/
+    - assets/audio/piano/
+    - assets/audio/guitar/
+    - assets/audio/bass/
+    - assets/audio/drumkit/
+    - assets/audio/musicbox/
+    - assets/audio/violin/
+    - assets/audio/trumpet/
+    - assets/icons/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

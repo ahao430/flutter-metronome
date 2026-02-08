@@ -2,6 +2,14 @@
 
 一款专业的音乐练习工具，支持节拍器和调音器功能。
 
+## 在线体验
+
+**Web 版本**: https://ahao430.github.io/flutter-metronome/
+
+## 下载
+
+- [Android APK](https://github.com/ahao430/flutter-metronome/releases/latest)
+
 ## 功能特性
 
 ### 节拍器
@@ -12,7 +20,9 @@
 - 拍号选择：2/4, 3/4, 4/4, 5/4, 6/4
 - 多种节奏型：四分、八分、三连音、十六分、前八后十六、前十六后八
 - Swing 摇摆节奏支持
-- 多种音色：数字音、机械音、鼓组、木块、钢琴、吉他、贝斯、踩镲、牛铃
+- 多种音色：
+  - 合成音色：数字音、机械音、木块、踩镲、牛铃
+  - 采样音色：钢琴、吉他、贝斯、鼓组、音乐盒、小提琴、小号
 - Tap Tempo 敲击测速
 - 设置自动保存
 
@@ -24,12 +34,21 @@
 - 点击敲击，积累功德
 - 飘字动画效果
 
-## TODO
+## 音频资源
 
-- [ ] 寻找更多音色文件，用实际音频文件代替合成声音
-  - 钢琴、吉他、贝斯等乐器音色
-  - 可在 `assets/sounds/` 目录下放置音频文件
-  - 更新 `AudioService` 以加载音频文件
+采样音色来自 [MusyngKite SoundFont](https://github.com/gleitz/midi-js-soundfonts/tree/gh-pages/MusyngKite)。
+
+音频文件下载格式：
+```
+https://github.com/gleitz/midi-js-soundfonts/raw/refs/heads/gh-pages/MusyngKite/{instrument}-mp3/{note}.mp3
+```
+
+可用乐器列表见：https://github.com/gleitz/midi-js-soundfonts/tree/gh-pages/MusyngKite
+
+当前使用的音符映射：
+- 强拍 (strong): C5 或更高音
+- 弱拍 (weak): C4 或更低音
+- 次强拍 (subaccent): 中间音
 
 ## 环境要求
 
@@ -156,12 +175,22 @@ lib/
     └── wooden_fish/
         └── ui/
             └── wooden_fish_page.dart    # 木鱼页面
+
+assets/
+└── audio/
+    ├── piano/         # 钢琴音色
+    ├── guitar/        # 吉他音色
+    ├── bass/          # 贝斯音色
+    ├── drumkit/       # 鼓组音色
+    ├── musicbox/      # 音乐盒音色
+    ├── violin/        # 小提琴音色
+    └── trumpet/       # 小号音色
 ```
 
 ## 技术栈
 
 - **状态管理**: flutter_riverpod
-- **音频播放**: audioplayers
+- **音频引擎**: flutter_soloud (低延迟音频合成和采样播放)
 - **本地存储**: hive
 - **动画**: flutter_animate
 - **屏幕常亮**: wakelock_plus

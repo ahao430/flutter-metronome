@@ -2,7 +2,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-/// 调音器页面 (基础版本)
+/// 调音器页面
+/// 注意: 当前为演示版本，实际音高检测功能待实现
+/// TODO: 集成 flutter_audio_capture + pitch_detector_dart 实现真实音高检测
 class TunerPage extends StatefulWidget {
   const TunerPage({super.key});
 
@@ -11,62 +13,28 @@ class TunerPage extends StatefulWidget {
 }
 
 class _TunerPageState extends State<TunerPage> with SingleTickerProviderStateMixin {
-  late AnimationController _animController;
   double _cents = 0; // -50 to +50
-  String _note = 'A4';
-  double _frequency = 440.0;
+  String _note = '--';
+  double _frequency = 0;
   bool _isListening = false;
-
-  final List<String> _notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-
-  @override
-  void initState() {
-    super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-  }
-
-  @override
-  void dispose() {
-    _animController.dispose();
-    super.dispose();
-  }
+  bool _hasSignal = false; // 是否检测到声音信号
 
   void _toggleListening() {
     setState(() {
       _isListening = !_isListening;
-    });
-
-    if (_isListening) {
-      _simulatePitchDetection();
-    }
-  }
-
-  // 模拟音高检测（实际应使用 flutter_audio_capture + pitch_detector_dart）
-  void _simulatePitchDetection() {
-    if (!_isListening) return;
-
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (!mounted || !_isListening) return;
-
-      setState(() {
-        // 模拟随机偏移
-        _cents = (Random().nextDouble() - 0.5) * 60;
-        final noteIndex = Random().nextInt(12);
-        final octave = 3 + Random().nextInt(3);
-        _note = '${_notes[noteIndex]}$octave';
-        _frequency = 440.0 * pow(2, (noteIndex - 9) / 12.0 + (octave - 4)).toDouble();
-      });
-
-      _simulatePitchDetection();
+      if (!_isListening) {
+        // 停止监听时重置状态
+        _hasSignal = false;
+        _note = '--';
+        _frequency = 0;
+        _cents = 0;
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final isInTune = _cents.abs() < 5;
+    final isInTune = _hasSignal && _cents.abs() < 5;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A1628),
@@ -99,34 +67,81 @@ class _TunerPageState extends State<TunerPage> with SingleTickerProviderStateMix
                 .animate(target: isInTune ? 1 : 0)
                 .tint(color: Colors.green.shade400),
 
-            Text(
-              '${_frequency.toStringAsFixed(1)} Hz',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.white.withValues(alpha: 0.5),
+            if (_hasSignal && _frequency > 0)
+              Text(
+                '${_frequency.toStringAsFixed(1)} Hz',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white.withValues(alpha: 0.5),
+                ),
+              )
+            else
+              Text(
+                _isListening ? '等待声音输入...' : '点击下方按钮开始',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white.withValues(alpha: 0.3),
+                ),
               ),
-            ),
 
             const SizedBox(height: 40),
 
             // 调音指示器
-            _TunerGauge(cents: _cents, isListening: _isListening),
+            _TunerGauge(cents: _cents, isListening: _isListening, hasSignal: _hasSignal),
 
             const SizedBox(height: 24),
 
             // 偏差显示
-            Text(
-              _cents >= 0 ? '+${_cents.toStringAsFixed(0)} cents' : '${_cents.toStringAsFixed(0)} cents',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w300,
-                color: isInTune
-                    ? Colors.green.shade400
-                    : (_cents > 0 ? Colors.red.shade400 : Colors.blue.shade400),
+            if (_hasSignal)
+              Text(
+                _cents >= 0 ? '+${_cents.toStringAsFixed(0)} cents' : '${_cents.toStringAsFixed(0)} cents',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w300,
+                  color: isInTune
+                      ? Colors.green.shade400
+                      : (_cents > 0 ? Colors.red.shade400 : Colors.blue.shade400),
+                ),
+              )
+            else
+              Text(
+                _isListening ? '请对着麦克风发出声音' : '',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w300,
+                  color: Colors.white.withValues(alpha: 0.4),
+                ),
+              ),
+
+            const Spacer(),
+
+            // 功能提示
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 40),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.amber.shade300, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '调音器功能开发中，即将支持真实音高检测',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.amber.shade200,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
 
-            const Spacer(),
+            const SizedBox(height: 24),
 
             // 开始/停止按钮
             GestureDetector(
@@ -162,7 +177,7 @@ class _TunerPageState extends State<TunerPage> with SingleTickerProviderStateMix
             const SizedBox(height: 16),
 
             Text(
-              _isListening ? '正在监听...' : '点击开始调音',
+              _isListening ? '点击停止' : '点击开始调音',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.white.withValues(alpha: 0.5),
@@ -182,8 +197,13 @@ class _TunerPageState extends State<TunerPage> with SingleTickerProviderStateMix
 class _TunerGauge extends StatelessWidget {
   final double cents;
   final bool isListening;
+  final bool hasSignal;
 
-  const _TunerGauge({required this.cents, required this.isListening});
+  const _TunerGauge({
+    required this.cents,
+    required this.isListening,
+    required this.hasSignal,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -191,7 +211,11 @@ class _TunerGauge extends StatelessWidget {
       width: 280,
       height: 140,
       child: CustomPaint(
-        painter: _GaugePainter(cents: cents, isListening: isListening),
+        painter: _GaugePainter(
+          cents: cents,
+          isListening: isListening,
+          hasSignal: hasSignal,
+        ),
       ),
     );
   }
@@ -200,8 +224,13 @@ class _TunerGauge extends StatelessWidget {
 class _GaugePainter extends CustomPainter {
   final double cents;
   final bool isListening;
+  final bool hasSignal;
 
-  _GaugePainter({required this.cents, required this.isListening});
+  _GaugePainter({
+    required this.cents,
+    required this.isListening,
+    required this.hasSignal,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -261,37 +290,46 @@ class _GaugePainter extends CustomPainter {
       greenPaint,
     );
 
-    if (!isListening) return;
+    // 指针 - 只有在监听且有信号时才显示
+    if (isListening && hasSignal) {
+      final needleAngle = pi + (cents + 50) / 100 * pi;
+      final needleLength = radius - 30;
 
-    // 指针
-    final needleAngle = pi + (cents + 50) / 100 * pi;
-    final needleLength = radius - 30;
+      final isInTune = cents.abs() < 5;
+      final needlePaint = Paint()
+        ..color = isInTune ? Colors.green : Colors.white
+        ..strokeWidth = 4
+        ..strokeCap = StrokeCap.round;
 
-    final isInTune = cents.abs() < 5;
-    final needlePaint = Paint()
-      ..color = isInTune ? Colors.green : Colors.white
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round;
+      canvas.drawLine(
+        center,
+        Offset(
+          center.dx + cos(needleAngle) * needleLength,
+          center.dy + sin(needleAngle) * needleLength,
+        ),
+        needlePaint,
+      );
 
-    canvas.drawLine(
-      center,
-      Offset(
-        center.dx + cos(needleAngle) * needleLength,
-        center.dy + sin(needleAngle) * needleLength,
-      ),
-      needlePaint,
-    );
-
-    // 中心点
-    canvas.drawCircle(
-      center,
-      8,
-      Paint()..color = isInTune ? Colors.green : Colors.white,
-    );
+      // 中心点
+      canvas.drawCircle(
+        center,
+        8,
+        Paint()..color = isInTune ? Colors.green : Colors.white,
+      );
+    } else if (isListening) {
+      // 监听中但无信号 - 显示灰色中心点
+      canvas.drawCircle(
+        center,
+        6,
+        Paint()..color = Colors.white.withValues(alpha: 0.3),
+      );
+    }
   }
 
   @override
   bool shouldRepaint(covariant _GaugePainter oldDelegate) {
-    return oldDelegate.cents != cents || oldDelegate.isListening != isListening;
+    return oldDelegate.cents != cents ||
+        oldDelegate.isListening != isListening ||
+        oldDelegate.hasSignal != hasSignal;
   }
 }

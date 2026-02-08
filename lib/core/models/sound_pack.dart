@@ -129,6 +129,30 @@ class SoundPackConfig {
       waveType: 'square',
       duration: 0.08,
     ),
+    // 音乐盒：高频清脆正弦波
+    SoundPack.musicBox: SoundPackConfig(
+      strongFreq: 1047,  // C6
+      weakFreq: 784,     // G5
+      subAccentFreq: 880, // A5
+      waveType: 'sine',
+      duration: 0.2,
+    ),
+    // 小提琴：中高频三角波
+    SoundPack.violin: SoundPackConfig(
+      strongFreq: 659,   // E5
+      weakFreq: 440,     // A4
+      subAccentFreq: 523, // C5
+      waveType: 'triangle',
+      duration: 0.15,
+    ),
+    // 小号：中频方波
+    SoundPack.trumpet: SoundPackConfig(
+      strongFreq: 466,   // Bb4
+      weakFreq: 349,     // F4
+      subAccentFreq: 392, // G4
+      waveType: 'square',
+      duration: 0.12,
+    ),
   };
 }
 

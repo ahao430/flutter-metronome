@@ -25,7 +25,15 @@ class AudioService {
   void playBeat(BeatType type) {
     if (type == BeatType.rest || _audioContext == null) return;
 
-    final config = SoundPackConfig.configs[_currentPack]!;
+    // 获取配置，如果不存在则使用默认配置
+    final config = SoundPackConfig.configs[_currentPack] ??
+        const SoundPackConfig(
+          strongFreq: 880,
+          weakFreq: 660,
+          subAccentFreq: 770,
+          waveType: 'sine',
+          duration: 0.1,
+        );
     final frequency = switch (type) {
       BeatType.strong => config.strongFreq,
       BeatType.subAccent => config.subAccentFreq,

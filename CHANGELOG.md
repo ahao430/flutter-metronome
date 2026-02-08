@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.3] - 2025-02-09
+
+### Fixed
+- **彻底修复 Android 音频崩溃问题**
+  - 放弃不稳定的 `loadWaveform` 实时合成
+  - 改用预生成的 WAV 音频文件，100% 稳定
+  - 添加 ProGuard 规则防止混淆导致 Native 崩溃
+- 修复 Web 端缺少音色配置导致的空值错误
+
+### Added
+- 预生成的合成音色 WAV 文件 (digital, analog, woodblock, hihat, cowbell)
+- ProGuard 规则文件 `proguard-rules.pro`
+
+### Changed
+- 音频服务完全重写，统一使用 `loadAsset` 加载音频文件
+- 启用 Android Release 混淆优化
+
 ## [0.0.2] - 2025-02-09
 
 ### Added

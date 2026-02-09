@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.4] - 2025-02-09
+
+### Added
+- **调音器功能完整实现**
+  - 使用 `pitch_detector_dart` (YIN算法) 进行实时音高检测
+  - 使用 `record` 包采集麦克风 PCM16 音频流
+  - 显示音符名称、频率 (Hz)、音分偏差
+  - 仪表盘指针根据音准实时变化
+  - Web 平台显示"仅支持移动端"提示
+
+- **6种高质量采样音色**
+  - click: 经典节拍器 (Perc_MetronomeQuartz)
+  - stick: 鼓棒 (Perc_Stick)
+  - block: 木块 (Synth_Block_A)
+  - tick: 数字滴答 (Synth_Tick_A)
+  - clap: 拍手 (Perc_Clap)
+  - bell: 铃声 (Synth_Bell_A)
+
+### Changed
+- 音色系统从合成音改为真实采样音频
+- Web 版本使用 Web Audio API + AudioBuffer 实现低延迟播放
+- 移除旧的合成音色 (digital, analog, woodblock, hihat, cowbell)
+
+### Fixed
+- 修复 Web 端音频只播放一次无法重复的问题
+
 ## [0.0.3] - 2025-02-09
 
 ### Fixed

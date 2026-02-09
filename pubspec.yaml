@@ -49,6 +49,11 @@ dependencies:
   wakelock_plus: ^1.2.8
   web: ^1.1.1
 
+  # Tuner - Audio capture and pitch detection
+  permission_handler: ^11.3.1
+  record: ^5.1.2
+  pitch_detector_dart: ^0.0.7
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

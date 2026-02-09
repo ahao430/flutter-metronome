@@ -1,40 +1,104 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/tuner_service.dart';
 
-/// 调音器页面
-/// 注意: 当前为演示版本，实际音高检测功能待实现
-/// TODO: 集成 flutter_audio_capture + pitch_detector_dart 实现真实音高检测
-class TunerPage extends StatefulWidget {
-  const TunerPage({super.key});
+/// TunerService Provider
+final tunerServiceProvider = Provider<TunerService>((ref) {
+  final service = TunerService();
+  ref.onDispose(() => service.dispose());
+  return service;
+});
 
-  @override
-  State<TunerPage> createState() => _TunerPageState();
+/// 调音器状态
+class TunerState {
+  final bool isListening;
+  final bool hasPermission;
+  final PitchResult pitch;
+
+  const TunerState({
+    this.isListening = false,
+    this.hasPermission = false,
+    this.pitch = PitchResult.noSignal,
+  });
+
+  TunerState copyWith({
+    bool? isListening,
+    bool? hasPermission,
+    PitchResult? pitch,
+  }) {
+    return TunerState(
+      isListening: isListening ?? this.isListening,
+      hasPermission: hasPermission ?? this.hasPermission,
+      pitch: pitch ?? this.pitch,
+    );
+  }
 }
 
-class _TunerPageState extends State<TunerPage> with SingleTickerProviderStateMixin {
-  double _cents = 0; // -50 to +50
-  String _note = '--';
-  double _frequency = 0;
-  bool _isListening = false;
-  bool _hasSignal = false; // 是否检测到声音信号
+/// 调音器状态 Notifier
+class TunerNotifier extends StateNotifier<TunerState> {
+  final TunerService _tunerService;
+  StreamSubscription<PitchResult>? _pitchSubscription;
 
-  void _toggleListening() {
-    setState(() {
-      _isListening = !_isListening;
-      if (!_isListening) {
-        // 停止监听时重置状态
-        _hasSignal = false;
-        _note = '--';
-        _frequency = 0;
-        _cents = 0;
-      }
+  TunerNotifier(this._tunerService) : super(const TunerState()) {
+    _init();
+  }
+
+  void _init() async {
+    // 检查权限
+    final hasPermission = await _tunerService.checkPermission();
+    state = state.copyWith(hasPermission: hasPermission);
+
+    // 监听音高变化
+    _pitchSubscription = _tunerService.pitchStream.listen((pitch) {
+      state = state.copyWith(pitch: pitch);
     });
   }
 
+  Future<void> toggleListening() async {
+    if (state.isListening) {
+      await _tunerService.stopListening();
+      state = state.copyWith(
+        isListening: false,
+        pitch: PitchResult.noSignal,
+      );
+    } else {
+      final success = await _tunerService.startListening();
+      state = state.copyWith(
+        isListening: success,
+        hasPermission: _tunerService.hasPermission,
+      );
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
-    final isInTune = _hasSignal && _cents.abs() < 5;
+  void dispose() {
+    _pitchSubscription?.cancel();
+    super.dispose();
+  }
+}
+
+/// 调音器状态 Provider
+final tunerStateProvider = StateNotifierProvider<TunerNotifier, TunerState>((ref) {
+  final service = ref.watch(tunerServiceProvider);
+  return TunerNotifier(service);
+});
+
+/// 调音器页面
+class TunerPage extends ConsumerWidget {
+  const TunerPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tunerState = ref.watch(tunerStateProvider);
+    final tunerNotifier = ref.read(tunerStateProvider.notifier);
+
+    final pitch = tunerState.pitch;
+    final isListening = tunerState.isListening;
+    final hasSignal = pitch.frequency > 0;
+    final isInTune = hasSignal && pitch.isInTune;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A1628),
@@ -42,149 +106,156 @@ class _TunerPageState extends State<TunerPage> with SingleTickerProviderStateMix
         child: Center(
           child: Column(
             children: [
-            const SizedBox(height: 40),
-            // 标题
-            Text(
-              'TUNER',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 4,
-                color: Colors.white.withValues(alpha: 0.5),
-              ),
-            ),
-            const Spacer(),
-
-            // 音名显示
-            Text(
-              _note,
-              style: TextStyle(
-                fontSize: 72,
-                fontWeight: FontWeight.w200,
-                color: isInTune ? Colors.green.shade400 : Colors.white,
-              ),
-            )
-                .animate(target: isInTune ? 1 : 0)
-                .tint(color: Colors.green.shade400),
-
-            if (_hasSignal && _frequency > 0)
+              const SizedBox(height: 40),
+              // 标题
               Text(
-                '${_frequency.toStringAsFixed(1)} Hz',
+                'TUNER',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 4,
                   color: Colors.white.withValues(alpha: 0.5),
                 ),
-              )
-            else
-              Text(
-                _isListening ? '等待声音输入...' : '点击下方按钮开始',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white.withValues(alpha: 0.3),
-                ),
               ),
+              const Spacer(),
 
-            const SizedBox(height: 40),
-
-            // 调音指示器
-            _TunerGauge(cents: _cents, isListening: _isListening, hasSignal: _hasSignal),
-
-            const SizedBox(height: 24),
-
-            // 偏差显示
-            if (_hasSignal)
+              // 音名显示
               Text(
-                _cents >= 0 ? '+${_cents.toStringAsFixed(0)} cents' : '${_cents.toStringAsFixed(0)} cents',
+                pitch.noteName,
                 style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w300,
-                  color: isInTune
-                      ? Colors.green.shade400
-                      : (_cents > 0 ? Colors.red.shade400 : Colors.blue.shade400),
+                  fontSize: 72,
+                  fontWeight: FontWeight.w200,
+                  color: isInTune ? Colors.green.shade400 : Colors.white,
                 ),
               )
-            else
-              Text(
-                _isListening ? '请对着麦克风发出声音' : '',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w300,
-                  color: Colors.white.withValues(alpha: 0.4),
+                  .animate(target: isInTune ? 1 : 0)
+                  .tint(color: Colors.green.shade400),
+
+              if (hasSignal)
+                Text(
+                  '${pitch.frequency.toStringAsFixed(1)} Hz',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
+                )
+              else
+                Text(
+                  isListening ? '等待声音输入...' : '点击下方按钮开始',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
                 ),
+
+              const SizedBox(height: 40),
+
+              // 调音指示器
+              _TunerGauge(
+                cents: pitch.cents,
+                isListening: isListening,
+                hasSignal: hasSignal,
               ),
 
-            const Spacer(),
+              const SizedBox(height: 24),
 
-            // 功能提示
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 40),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.amber.shade300, size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      '调音器功能开发中，即将支持真实音高检测',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.amber.shade200,
+              // 偏差显示
+              if (hasSignal)
+                Text(
+                  pitch.cents >= 0
+                      ? '+${pitch.cents.toStringAsFixed(0)} cents'
+                      : '${pitch.cents.toStringAsFixed(0)} cents',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w300,
+                    color: isInTune
+                        ? Colors.green.shade400
+                        : (pitch.cents > 0 ? Colors.red.shade400 : Colors.blue.shade400),
+                  ),
+                )
+              else
+                Text(
+                  isListening ? '请对着麦克风发出声音' : '',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w300,
+                    color: Colors.white.withValues(alpha: 0.4),
+                  ),
+                ),
+
+              const Spacer(),
+
+              // 权限提示
+              if (!tunerState.hasPermission && !isListening)
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 40),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.amber.shade300, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          '需要麦克风权限来检测音高',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.amber.shade200,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            // 开始/停止按钮
-            GestureDetector(
-              onTap: _toggleListening,
-              child: Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: _isListening
-                        ? [Colors.red.shade400, Colors.red.shade700]
-                        : [Colors.blue.shade400, Colors.blue.shade700],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (_isListening ? Colors.red : Colors.blue).withValues(alpha: 0.4),
-                      blurRadius: 20,
-                      spreadRadius: 4,
+              // 开始/停止按钮
+              GestureDetector(
+                onTap: () => tunerNotifier.toggleListening(),
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: isListening
+                          ? [Colors.red.shade400, Colors.red.shade700]
+                          : [Colors.blue.shade400, Colors.blue.shade700],
                     ),
-                  ],
-                ),
-                child: Icon(
-                  _isListening ? Icons.mic_off : Icons.mic,
-                  size: 48,
-                  color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isListening ? Colors.red : Colors.blue).withValues(alpha: 0.4),
+                        blurRadius: 20,
+                        spreadRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    isListening ? Icons.mic_off : Icons.mic,
+                    size: 48,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            Text(
-              _isListening ? '点击停止' : '点击开始调音',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white.withValues(alpha: 0.5),
+              Text(
+                isListening ? '点击停止' : '点击开始调音',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withValues(alpha: 0.5),
+                ),
               ),
-            ),
 
-            const SizedBox(height: 60),
+              const SizedBox(height: 60),
             ],
           ),
         ),
@@ -292,7 +363,8 @@ class _GaugePainter extends CustomPainter {
 
     // 指针 - 只有在监听且有信号时才显示
     if (isListening && hasSignal) {
-      final needleAngle = pi + (cents + 50) / 100 * pi;
+      final clampedCents = cents.clamp(-50.0, 50.0);
+      final needleAngle = pi + (clampedCents + 50) / 100 * pi;
       final needleLength = radius - 30;
 
       final isInTune = cents.abs() < 5;

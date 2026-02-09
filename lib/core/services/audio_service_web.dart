@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import '../models/beat_type.dart';
@@ -91,12 +93,14 @@ class AudioService {
     }
   }
 
-  /// 播放音频
-  void _playSound(AudioPlayer player, double volume) async {
+  /// 播放音频 - 支持快速重复播放
+  Future<void> _playSound(AudioPlayer player, double volume) async {
     try {
       await player.setVolume(volume);
+      // seek 到开头并播放
       await player.seek(Duration.zero);
-      player.play();
+      // 总是调用 play()，处理 completed 状态
+      unawaited(player.play());
     } catch (e) {
       debugPrint('❌ Play error: $e');
     }

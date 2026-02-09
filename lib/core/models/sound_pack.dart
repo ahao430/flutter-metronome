@@ -1,26 +1,26 @@
 /// 音色类型
 enum SoundType {
   synthesis,  // 合成音（电子音）
-  sample,     // 采样音（音频文件）
+  sample,     // 采样音（音频文件）- 预留
 }
 
 /// 音色包枚举
 enum SoundPack {
-  // 合成音色
+  // 合成音色（使用预生成的 WAV 文件）
   digital('digital', '数字音', SoundType.synthesis),
   analog('analog', '机械音', SoundType.synthesis),
   woodblock('woodblock', '木块', SoundType.synthesis),
   hihat('hihat', '踩镲', SoundType.synthesis),
-  cowbell('cowbell', '牛铃', SoundType.synthesis),
+  cowbell('cowbell', '牛铃', SoundType.synthesis);
 
-  // 采样音色 (音频文件)
-  drumKit('drumkit', '鼓组', SoundType.sample),
-  piano('piano', '钢琴', SoundType.sample),
-  guitar('guitar', '吉他', SoundType.sample),
-  bass('bass', '贝斯', SoundType.sample),
-  musicBox('musicbox', '音乐盒', SoundType.sample),
-  violin('violin', '小提琴', SoundType.sample),
-  trumpet('trumpet', '小号', SoundType.sample);
+  // TODO: 采样音色（待添加高质量音频文件）
+  // drumKit('drumkit', '鼓组', SoundType.sample),
+  // piano('piano', '钢琴', SoundType.sample),
+  // guitar('guitar', '吉他', SoundType.sample),
+  // bass('bass', '贝斯', SoundType.sample),
+  // musicBox('musicbox', '音乐盒', SoundType.sample),
+  // violin('violin', '小提琴', SoundType.sample),
+  // trumpet('trumpet', '小号', SoundType.sample);
 
   final String folderName;  // 文件夹名称
   final String label;       // 显示名称
@@ -73,14 +73,6 @@ class SoundPackConfig {
       waveType: 'triangle',
       duration: 0.08,
     ),
-    // 鼓组：低频正弦波模拟底鼓
-    SoundPack.drumKit: SoundPackConfig(
-      strongFreq: 80,
-      weakFreq: 200,
-      subAccentFreq: 120,
-      waveType: 'sine',
-      duration: 0.12,
-    ),
     // 木块：高频短促
     SoundPack.woodblock: SoundPackConfig(
       strongFreq: 800,
@@ -88,30 +80,6 @@ class SoundPackConfig {
       subAccentFreq: 700,
       waveType: 'triangle',
       duration: 0.06,
-    ),
-    // 钢琴：待添加音频文件 (临时用正弦波占位)
-    SoundPack.piano: SoundPackConfig(
-      strongFreq: 523,   // C5
-      weakFreq: 392,     // G4
-      subAccentFreq: 440, // A4
-      waveType: 'sine',
-      duration: 0.15,
-    ),
-    // 吉他：待添加音频文件 (临时用三角波占位)
-    SoundPack.guitar: SoundPackConfig(
-      strongFreq: 330,   // E4
-      weakFreq: 247,     // B3
-      subAccentFreq: 294, // D4
-      waveType: 'triangle',
-      duration: 0.12,
-    ),
-    // 贝斯：待添加音频文件 (临时用低频正弦波占位)
-    SoundPack.bass: SoundPackConfig(
-      strongFreq: 98,    // G2
-      weakFreq: 73,      // D2
-      subAccentFreq: 82,  // E2
-      waveType: 'sine',
-      duration: 0.15,
     ),
     // 踩镲：高频噪声感
     SoundPack.hihat: SoundPackConfig(
@@ -128,30 +96,6 @@ class SoundPackConfig {
       subAccentFreq: 500,
       waveType: 'square',
       duration: 0.08,
-    ),
-    // 音乐盒：高频清脆正弦波
-    SoundPack.musicBox: SoundPackConfig(
-      strongFreq: 1047,  // C6
-      weakFreq: 784,     // G5
-      subAccentFreq: 880, // A5
-      waveType: 'sine',
-      duration: 0.2,
-    ),
-    // 小提琴：中高频三角波
-    SoundPack.violin: SoundPackConfig(
-      strongFreq: 659,   // E5
-      weakFreq: 440,     // A4
-      subAccentFreq: 523, // C5
-      waveType: 'triangle',
-      duration: 0.15,
-    ),
-    // 小号：中频方波
-    SoundPack.trumpet: SoundPackConfig(
-      strongFreq: 466,   // Bb4
-      weakFreq: 349,     // F4
-      subAccentFreq: 392, // G4
-      waveType: 'square',
-      duration: 0.12,
     ),
   };
 }

@@ -48,28 +48,9 @@ class AudioService {
           final path = 'assets/audio/synth/${pack}_$type.wav';
           final source = await SoLoud.instance.loadAsset(path);
           _audioSources[key] = source;
-          debugPrint('✅ Loaded synth: $key');
+          debugPrint('✅ Loaded: $key');
         } catch (e) {
-          debugPrint('⚠️ Failed to load synth $key: $e');
-        }
-      }
-    }
-
-    // 加载采样音色
-    for (final pack in SoundPack.values) {
-      if (!pack.isSample) continue;
-
-      for (final type in beatTypes) {
-        final key = '${pack.folderName}_$type';
-        if (_audioSources.containsKey(key)) continue;
-
-        try {
-          final path = pack.getAssetPath(type);
-          final source = await SoLoud.instance.loadAsset(path);
-          _audioSources[key] = source;
-          debugPrint('✅ Loaded sample: $key');
-        } catch (e) {
-          debugPrint('⚠️ Sample not found: ${pack.getAssetPath(type)}');
+          debugPrint('⚠️ Failed to load $key: $e');
         }
       }
     }

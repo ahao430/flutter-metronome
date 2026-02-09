@@ -80,13 +80,6 @@ flutter:
   assets:
     - assets/audio/
     - assets/audio/synth/
-    - assets/audio/piano/
-    - assets/audio/guitar/
-    - assets/audio/bass/
-    - assets/audio/drumkit/
-    - assets/audio/musicbox/
-    - assets/audio/violin/
-    - assets/audio/trumpet/
     - assets/icons/
 
   # An image asset can refer to one or more resolution-specific "variants", see

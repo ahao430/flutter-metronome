@@ -20,35 +20,22 @@
 - 拍号选择：2/4, 3/4, 4/4, 5/4, 6/4
 - 多种节奏型：四分、八分、三连音、十六分、前八后十六、前十六后八
 - Swing 摇摆节奏支持
-- 多种音色：
-  - 合成音色：数字音、机械音、木块、踩镲、牛铃
-  - 采样音色：钢琴、吉他、贝斯、鼓组、音乐盒、小提琴、小号
+- 多种音色：数字音、机械音、木块、踩镲、牛铃
 - Tap Tempo 敲击测速
 - 设置自动保存
 
 ### 调音器
-- 实时音高检测
+- 实时音高检测（开发中）
 - 标准音 A4 = 440Hz
 
 ### 电子木鱼
 - 点击敲击，积累功德
 - 飘字动画效果
 
-## 音频资源
+## TODO
 
-采样音色来自 [MusyngKite SoundFont](https://github.com/gleitz/midi-js-soundfonts/tree/gh-pages/MusyngKite)。
-
-音频文件下载格式：
-```
-https://github.com/gleitz/midi-js-soundfonts/raw/refs/heads/gh-pages/MusyngKite/{instrument}-mp3/{note}.mp3
-```
-
-可用乐器列表见：https://github.com/gleitz/midi-js-soundfonts/tree/gh-pages/MusyngKite
-
-当前使用的音符映射：
-- 强拍 (strong): C5 或更高音
-- 弱拍 (weak): C4 或更低音
-- 次强拍 (subaccent): 中间音
+- [ ] 添加更多乐器采样音色（钢琴、吉他、鼓组等）
+- [ ] 实现真实音高检测功能
 
 ## 环境要求
 

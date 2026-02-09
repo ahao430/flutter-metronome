@@ -41,7 +41,7 @@ class MetronomeState {
     this.isPlaying = false,
     this.bpm = 120,
     this.currentStep = -1,
-    this.soundPack = SoundPack.digital,
+    this.soundPack = SoundPack.click,
     this.currentPreset,
     this.measurePattern,
     this.swingRatio = 0.5,

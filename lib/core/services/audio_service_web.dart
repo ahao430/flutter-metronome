@@ -3,11 +3,68 @@ import 'package:web/web.dart' as web;
 import '../models/beat_type.dart';
 import '../models/sound_pack.dart';
 
+/// Web 音色配置（合成音）
+class WebSoundConfig {
+  final double strongFreq;
+  final double weakFreq;
+  final String waveType;
+  final double duration;
+
+  const WebSoundConfig({
+    required this.strongFreq,
+    required this.weakFreq,
+    this.waveType = 'sine',
+    this.duration = 0.08,
+  });
+
+  double get subAccentFreq => (strongFreq + weakFreq) / 2;
+
+  /// 每种音色对应的 Web Audio 合成配置
+  static const Map<SoundPack, WebSoundConfig> configs = {
+    SoundPack.click: WebSoundConfig(
+      strongFreq: 1200,
+      weakFreq: 900,
+      waveType: 'square',
+      duration: 0.05,
+    ),
+    SoundPack.stick: WebSoundConfig(
+      strongFreq: 800,
+      weakFreq: 600,
+      waveType: 'triangle',
+      duration: 0.04,
+    ),
+    SoundPack.block: WebSoundConfig(
+      strongFreq: 700,
+      weakFreq: 500,
+      waveType: 'triangle',
+      duration: 0.06,
+    ),
+    SoundPack.tick: WebSoundConfig(
+      strongFreq: 1000,
+      weakFreq: 800,
+      waveType: 'square',
+      duration: 0.03,
+    ),
+    SoundPack.clap: WebSoundConfig(
+      strongFreq: 400,
+      weakFreq: 300,
+      waveType: 'sawtooth',
+      duration: 0.08,
+    ),
+    SoundPack.bell: WebSoundConfig(
+      strongFreq: 880,
+      weakFreq: 660,
+      waveType: 'sine',
+      duration: 0.15,
+    ),
+  };
+}
+
 /// Web Audio 服务实现
 class AudioService {
   bool _isInitialized = false;
   web.AudioContext? _audioContext;
-  SoundPack _currentPack = SoundPack.digital;
+  SoundPack _currentPack = SoundPack.click;
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -25,15 +82,14 @@ class AudioService {
   void playBeat(BeatType type) {
     if (type == BeatType.rest || _audioContext == null) return;
 
-    // 获取配置，如果不存在则使用默认配置
-    final config = SoundPackConfig.configs[_currentPack] ??
-        const SoundPackConfig(
+    final config = WebSoundConfig.configs[_currentPack] ??
+        const WebSoundConfig(
           strongFreq: 880,
           weakFreq: 660,
-          subAccentFreq: 770,
           waveType: 'sine',
           duration: 0.1,
         );
+
     final frequency = switch (type) {
       BeatType.strong => config.strongFreq,
       BeatType.subAccent => config.subAccentFreq,
@@ -54,7 +110,6 @@ class AudioService {
     oscillator.type = waveType;
     oscillator.frequency.value = frequency;
 
-    // 起始音量
     gainNode.gain.value = volume;
 
     oscillator.connect(gainNode);
@@ -63,7 +118,6 @@ class AudioService {
     final now = ctx.currentTime;
     oscillator.start(now);
 
-    // 快速衰减
     gainNode.gain.setValueAtTime(volume, now);
     gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
     oscillator.stop(now + duration + 0.01);
@@ -74,11 +128,8 @@ class AudioService {
     final ctx = _audioContext;
     if (ctx == null) return;
 
-    // 木鱼主音
     _playWoodFishTone(ctx, 650, 0.5, 0.12);
-    // 泛音
     _playWoodFishTone(ctx, 1300, 0.2, 0.08);
-    // 低频共振
     _playWoodFishTone(ctx, 200, 0.3, 0.15);
   }
 

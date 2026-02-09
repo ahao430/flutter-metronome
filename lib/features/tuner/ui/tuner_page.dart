@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -93,11 +92,6 @@ class TunerPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Web 平台不支持调音器
-    if (kIsWeb) {
-      return _buildUnsupportedView();
-    }
-
     final tunerState = ref.watch(tunerStateProvider);
     final tunerNotifier = ref.read(tunerStateProvider.notifier);
 
@@ -262,53 +256,6 @@ class TunerPage extends ConsumerWidget {
               ),
 
               const SizedBox(height: 60),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Web 平台不支持调音器的提示界面
-  Widget _buildUnsupportedView() {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A1628),
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.mic_off,
-                size: 80,
-                color: Colors.white.withValues(alpha: 0.3),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'TUNER',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 4,
-                  color: Colors.white.withValues(alpha: 0.5),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '调音器功能仅支持移动端',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.white.withValues(alpha: 0.7),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '请在 iOS 或 Android 设备上使用',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white.withValues(alpha: 0.4),
-                ),
-              ),
             ],
           ),
         ),

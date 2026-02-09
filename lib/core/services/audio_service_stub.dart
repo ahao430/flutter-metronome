@@ -4,12 +4,12 @@ import '../models/beat_type.dart';
 import '../models/sound_pack.dart';
 
 /// 音频服务 - 移动端/桌面端实现
-/// 使用 flutter_soloud 加载预生成的音频文件（避免 loadWaveform 在 Android 上不稳定）
+/// 使用 flutter_soloud 加载采样音频文件
 class AudioService {
   bool _isInitialized = false;
-  SoundPack _currentPack = SoundPack.digital;
+  SoundPack _currentPack = SoundPack.click;
 
-  // 预加载的音源 (key: "packFolderName_beatType")
+  // 预加载的音源 (key: "packName_beatType")
   final Map<String, AudioSource> _audioSources = {};
 
   // 木鱼音源
@@ -19,7 +19,7 @@ class AudioService {
     if (_isInitialized) return;
 
     try {
-      // 初始化 SoLoud，使用较大的缓冲区增加稳定性
+      // 初始化 SoLoud
       await SoLoud.instance.init();
       debugPrint('✅ SoLoud engine initialized');
 
@@ -35,17 +35,15 @@ class AudioService {
     }
   }
 
-  /// 预加载所有音色（使用音频文件而非实时合成）
+  /// 预加载所有采样音色
   Future<void> _loadAllSounds() async {
-    // 加载合成音色（使用预生成的 wav 文件）
-    final synthPacks = ['digital', 'analog', 'woodblock', 'hihat', 'cowbell'];
     final beatTypes = ['strong', 'weak', 'subaccent'];
 
-    for (final pack in synthPacks) {
+    for (final pack in SoundPack.values) {
       for (final type in beatTypes) {
-        final key = '${pack}_$type';
+        final key = '${pack.folderName}_$type';
         try {
-          final path = 'assets/audio/synth/${pack}_$type.wav';
+          final path = 'assets/audio/samples/${pack.folderName}_$type.wav';
           final source = await SoLoud.instance.loadAsset(path);
           _audioSources[key] = source;
           debugPrint('✅ Loaded: $key');
@@ -98,16 +96,14 @@ class AudioService {
         SoLoud.instance.play(source, volume: volume);
       } catch (e) {
         debugPrint('❌ Play error: $e');
-        // 尝试使用备用音色
         _playFallback(type);
       }
     } else {
-      // 音源未加载，使用备用
       _playFallback(type);
     }
   }
 
-  /// 后备音色（使用 digital）
+  /// 后备音色（使用 click）
   void _playFallback(BeatType type) {
     final typeStr = switch (type) {
       BeatType.strong => 'strong',
@@ -116,7 +112,7 @@ class AudioService {
       BeatType.rest => '',
     };
 
-    final key = 'digital_$typeStr';
+    final key = 'click_$typeStr';
     final source = _audioSources[key];
 
     if (source != null) {
@@ -145,7 +141,6 @@ class AudioService {
   }
 
   void dispose() {
-    // 清理所有音源
     for (final source in _audioSources.values) {
       try {
         SoLoud.instance.disposeSource(source);
@@ -153,7 +148,6 @@ class AudioService {
     }
     _audioSources.clear();
 
-    // 清理木鱼音源
     if (_woodenFishSource != null) {
       try {
         SoLoud.instance.disposeSource(_woodenFishSource!);

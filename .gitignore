@@ -47,3 +47,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Audio source files (not needed in repo)
+assets/audio/Metronomes/
+assets/*.zip

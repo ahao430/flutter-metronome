@@ -1,26 +1,18 @@
 /// 音色类型
 enum SoundType {
-  synthesis,  // 合成音（电子音）
-  sample,     // 采样音（音频文件）- 预留
+  synthesis,  // 合成音（电子音）- 已弃用
+  sample,     // 采样音（音频文件）
 }
 
 /// 音色包枚举
 enum SoundPack {
-  // 合成音色（使用预生成的 WAV 文件）
-  digital('digital', '数字音', SoundType.synthesis),
-  analog('analog', '机械音', SoundType.synthesis),
-  woodblock('woodblock', '木块', SoundType.synthesis),
-  hihat('hihat', '踩镲', SoundType.synthesis),
-  cowbell('cowbell', '牛铃', SoundType.synthesis);
-
-  // TODO: 采样音色（待添加高质量音频文件）
-  // drumKit('drumkit', '鼓组', SoundType.sample),
-  // piano('piano', '钢琴', SoundType.sample),
-  // guitar('guitar', '吉他', SoundType.sample),
-  // bass('bass', '贝斯', SoundType.sample),
-  // musicBox('musicbox', '音乐盒', SoundType.sample),
-  // violin('violin', '小提琴', SoundType.sample),
-  // trumpet('trumpet', '小号', SoundType.sample);
+  // 采样音色（使用高质量 WAV 文件）
+  click('click', '经典节拍器', SoundType.sample),
+  stick('stick', '鼓棒', SoundType.sample),
+  block('block', '木块', SoundType.sample),
+  tick('tick', '数字滴答', SoundType.sample),
+  clap('clap', '拍手', SoundType.sample),
+  bell('bell', '铃声', SoundType.sample);
 
   final String folderName;  // 文件夹名称
   final String label;       // 显示名称
@@ -34,70 +26,8 @@ enum SoundPack {
   /// 是否是采样音色
   bool get isSample => type == SoundType.sample;
 
-  /// 获取音频文件路径 (采样音色用)
-  String getAssetPath(String beatType) => 'assets/audio/$folderName/$beatType.mp3';
-}
-
-/// 音色包对应的频率配置
-class SoundPackConfig {
-  final double strongFreq;
-  final double weakFreq;
-  final double subAccentFreq;
-  final String waveType;
-  final double duration; // 声音持续时间
-  final double attack;   // 起音时间
-
-  const SoundPackConfig({
-    required this.strongFreq,
-    required this.weakFreq,
-    required this.subAccentFreq,
-    this.waveType = 'sine',
-    this.duration = 0.08,
-    this.attack = 0.01,
-  });
-
-  static const Map<SoundPack, SoundPackConfig> configs = {
-    // 数字音：清脆的高频方波
-    SoundPack.digital: SoundPackConfig(
-      strongFreq: 1200,
-      weakFreq: 900,
-      subAccentFreq: 1050,
-      waveType: 'square',
-      duration: 0.05,
-    ),
-    // 机械音：温暖的三角波
-    SoundPack.analog: SoundPackConfig(
-      strongFreq: 660,
-      weakFreq: 440,
-      subAccentFreq: 550,
-      waveType: 'triangle',
-      duration: 0.08,
-    ),
-    // 木块：高频短促
-    SoundPack.woodblock: SoundPackConfig(
-      strongFreq: 800,
-      weakFreq: 600,
-      subAccentFreq: 700,
-      waveType: 'triangle',
-      duration: 0.06,
-    ),
-    // 踩镲：高频噪声感
-    SoundPack.hihat: SoundPackConfig(
-      strongFreq: 1500,
-      weakFreq: 1200,
-      subAccentFreq: 1350,
-      waveType: 'square',
-      duration: 0.03,
-    ),
-    // 牛铃：中高频金属音
-    SoundPack.cowbell: SoundPackConfig(
-      strongFreq: 560,
-      weakFreq: 450,
-      subAccentFreq: 500,
-      waveType: 'square',
-      duration: 0.08,
-    ),
-  };
+  /// 获取音频文件路径
+  String getAssetPath(String beatType) => 'assets/audio/samples/${folderName}_$beatType.wav';
 }
 
 /// 节奏细分类型

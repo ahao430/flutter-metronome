@@ -1,76 +1,60 @@
 import 'package:flutter/foundation.dart';
-import 'package:web/web.dart' as web;
+import 'package:just_audio/just_audio.dart';
 import '../models/beat_type.dart';
 import '../models/sound_pack.dart';
 
-/// Web 音色配置（合成音）
-class WebSoundConfig {
-  final double strongFreq;
-  final double weakFreq;
-  final String waveType;
-  final double duration;
-
-  const WebSoundConfig({
-    required this.strongFreq,
-    required this.weakFreq,
-    this.waveType = 'sine',
-    this.duration = 0.08,
-  });
-
-  double get subAccentFreq => (strongFreq + weakFreq) / 2;
-
-  /// 每种音色对应的 Web Audio 合成配置
-  static const Map<SoundPack, WebSoundConfig> configs = {
-    SoundPack.click: WebSoundConfig(
-      strongFreq: 1200,
-      weakFreq: 900,
-      waveType: 'square',
-      duration: 0.05,
-    ),
-    SoundPack.stick: WebSoundConfig(
-      strongFreq: 800,
-      weakFreq: 600,
-      waveType: 'triangle',
-      duration: 0.04,
-    ),
-    SoundPack.block: WebSoundConfig(
-      strongFreq: 700,
-      weakFreq: 500,
-      waveType: 'triangle',
-      duration: 0.06,
-    ),
-    SoundPack.tick: WebSoundConfig(
-      strongFreq: 1000,
-      weakFreq: 800,
-      waveType: 'square',
-      duration: 0.03,
-    ),
-    SoundPack.clap: WebSoundConfig(
-      strongFreq: 400,
-      weakFreq: 300,
-      waveType: 'sawtooth',
-      duration: 0.08,
-    ),
-    SoundPack.bell: WebSoundConfig(
-      strongFreq: 880,
-      weakFreq: 660,
-      waveType: 'sine',
-      duration: 0.15,
-    ),
-  };
-}
-
-/// Web Audio 服务实现
+/// Web Audio 服务实现 - 使用 just_audio 加载真实音频文件
 class AudioService {
   bool _isInitialized = false;
-  web.AudioContext? _audioContext;
   SoundPack _currentPack = SoundPack.click;
+
+  // 预加载的播放器 (key: "packName_beatType")
+  final Map<String, AudioPlayer> _players = {};
+
+  // 木鱼播放器
+  AudioPlayer? _woodenFishPlayer;
 
   Future<void> initialize() async {
     if (_isInitialized) return;
-    _audioContext = web.AudioContext();
-    _isInitialized = true;
-    debugPrint('AudioService initialized (Web Audio API)');
+
+    try {
+      await _loadAllSounds();
+      _isInitialized = true;
+      debugPrint('✅ AudioService initialized (just_audio for Web)');
+    } catch (e) {
+      debugPrint('❌ AudioService init failed: $e');
+      _isInitialized = false;
+    }
+  }
+
+  /// 预加载所有采样音色
+  Future<void> _loadAllSounds() async {
+    final beatTypes = ['strong', 'weak', 'subaccent'];
+
+    for (final pack in SoundPack.values) {
+      for (final type in beatTypes) {
+        final key = '${pack.folderName}_$type';
+        try {
+          final player = AudioPlayer();
+          await player.setAsset('assets/audio/samples/${pack.folderName}_$type.wav');
+          _players[key] = player;
+          debugPrint('✅ Loaded: $key');
+        } catch (e) {
+          debugPrint('⚠️ Failed to load $key: $e');
+        }
+      }
+    }
+
+    // 加载木鱼音效
+    try {
+      _woodenFishPlayer = AudioPlayer();
+      await _woodenFishPlayer!.setAsset('assets/audio/synth/woodenfish.wav');
+      debugPrint('✅ Loaded wooden fish sound');
+    } catch (e) {
+      debugPrint('⚠️ Failed to load wooden fish: $e');
+    }
+
+    debugPrint('✅ Loaded ${_players.length} sounds total');
   }
 
   void setSoundPack(SoundPack pack) {
@@ -80,79 +64,82 @@ class AudioService {
   SoundPack get currentPack => _currentPack;
 
   void playBeat(BeatType type) {
-    if (type == BeatType.rest || _audioContext == null) return;
+    if (type == BeatType.rest || !_isInitialized) return;
 
-    final config = WebSoundConfig.configs[_currentPack] ??
-        const WebSoundConfig(
-          strongFreq: 880,
-          weakFreq: 660,
-          waveType: 'sine',
-          duration: 0.1,
-        );
-
-    final frequency = switch (type) {
-      BeatType.strong => config.strongFreq,
-      BeatType.subAccent => config.subAccentFreq,
-      BeatType.weak => config.weakFreq,
-      BeatType.rest => 0.0,
+    final typeStr = switch (type) {
+      BeatType.strong => 'strong',
+      BeatType.subAccent => 'subaccent',
+      BeatType.weak => 'weak',
+      BeatType.rest => '',
     };
-    final volume = type == BeatType.strong ? 0.7 : 0.4;
-    _playTone(frequency, volume, config.duration, config.waveType);
+
+    final key = '${_currentPack.folderName}_$typeStr';
+    final player = _players[key];
+
+    if (player != null) {
+      final volume = switch (type) {
+        BeatType.strong => 1.0,
+        BeatType.subAccent => 0.8,
+        BeatType.weak => 0.6,
+        BeatType.rest => 0.0,
+      };
+
+      _playSound(player, volume);
+    } else {
+      // 使用后备音色
+      _playFallback(type);
+    }
   }
 
-  void _playTone(double frequency, double volume, double duration, String waveType) {
-    final ctx = _audioContext;
-    if (ctx == null) return;
-
-    final oscillator = ctx.createOscillator();
-    final gainNode = ctx.createGain();
-
-    oscillator.type = waveType;
-    oscillator.frequency.value = frequency;
-
-    gainNode.gain.value = volume;
-
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-
-    final now = ctx.currentTime;
-    oscillator.start(now);
-
-    gainNode.gain.setValueAtTime(volume, now);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
-    oscillator.stop(now + duration + 0.01);
+  /// 播放音频
+  void _playSound(AudioPlayer player, double volume) async {
+    try {
+      await player.setVolume(volume);
+      await player.seek(Duration.zero);
+      player.play();
+    } catch (e) {
+      debugPrint('❌ Play error: $e');
+    }
   }
 
-  /// 播放木鱼声音 - 双音叠加模拟木鱼敲击
+  /// 后备音色（使用 click）
+  void _playFallback(BeatType type) {
+    final typeStr = switch (type) {
+      BeatType.strong => 'strong',
+      BeatType.subAccent => 'subaccent',
+      BeatType.weak => 'weak',
+      BeatType.rest => '',
+    };
+
+    final key = 'click_$typeStr';
+    final player = _players[key];
+
+    if (player != null) {
+      final volume = switch (type) {
+        BeatType.strong => 0.9,
+        BeatType.subAccent => 0.7,
+        BeatType.weak => 0.5,
+        BeatType.rest => 0.0,
+      };
+      _playSound(player, volume);
+    }
+  }
+
+  /// 播放木鱼声音
   void playWoodenFish() {
-    final ctx = _audioContext;
-    if (ctx == null) return;
-
-    _playWoodFishTone(ctx, 650, 0.5, 0.12);
-    _playWoodFishTone(ctx, 1300, 0.2, 0.08);
-    _playWoodFishTone(ctx, 200, 0.3, 0.15);
-  }
-
-  void _playWoodFishTone(web.AudioContext ctx, double freq, double vol, double dur) {
-    final osc = ctx.createOscillator();
-    final gain = ctx.createGain();
-
-    osc.type = 'triangle';
-    osc.frequency.value = freq;
-    gain.gain.value = vol;
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    final now = ctx.currentTime;
-    osc.start(now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
-    osc.stop(now + dur + 0.01);
+    if (!_isInitialized || _woodenFishPlayer == null) return;
+    _playSound(_woodenFishPlayer!, 0.8);
   }
 
   void dispose() {
-    _audioContext?.close();
-    _audioContext = null;
+    for (final player in _players.values) {
+      player.dispose();
+    }
+    _players.clear();
+
+    _woodenFishPlayer?.dispose();
+    _woodenFishPlayer = null;
+
     _isInitialized = false;
   }
 }

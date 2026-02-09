@@ -49,6 +49,9 @@ dependencies:
   wakelock_plus: ^1.2.8
   web: ^1.1.1
 
+  # Web Audio - just_audio for web platform
+  just_audio: ^0.9.40
+
   # Tuner - Audio capture and pitch detection
   permission_handler: ^11.3.1
   record: ^5.1.2

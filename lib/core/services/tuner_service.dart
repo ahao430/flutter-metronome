@@ -62,8 +62,15 @@ class TunerService {
     'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'
   ];
 
+  /// 是否支持当前平台
+  bool get isSupported => !kIsWeb;
+
   /// 请求麦克风权限
   Future<bool> requestPermission() async {
+    if (kIsWeb) {
+      debugPrint('⚠️ Tuner not supported on web');
+      return false;
+    }
     final status = await Permission.microphone.request();
     _hasPermission = status.isGranted;
     return _hasPermission;
@@ -71,6 +78,7 @@ class TunerService {
 
   /// 检查权限状态
   Future<bool> checkPermission() async {
+    if (kIsWeb) return false;
     final status = await Permission.microphone.status;
     _hasPermission = status.isGranted;
     return _hasPermission;
@@ -78,6 +86,10 @@ class TunerService {
 
   /// 开始监听
   Future<bool> startListening() async {
+    if (kIsWeb) {
+      debugPrint('⚠️ Tuner not supported on web');
+      return false;
+    }
     if (_isListening) return true;
 
     // 检查权限

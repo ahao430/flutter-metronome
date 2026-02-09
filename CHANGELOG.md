@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.5] - 2025-02-09
+
+### Added
+- **Web 端调音器功能**
+  - 使用 Web Audio API + 自相关算法 (ACF) 进行音高检测
+  - 全平台支持调音器（iOS/Android/Web）
+
+### Fixed
+- 修复 Android NDK 版本不匹配问题 (升级到 27.0.12077973)
+- 修复 record_linux 包兼容性问题 (升级 record 到 ^6.0.0)
+- 移除未使用的 just_audio 依赖
+
+### Changed
+- 调音器服务重构为接口模式，支持平台条件导入
+- Web 端移除"不支持"提示，改为完整功能实现
+
 ## [0.0.4] - 2025-02-09
 
 ### Added
